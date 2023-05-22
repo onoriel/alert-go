@@ -1,0 +1,27 @@
+version: "3.8"
+services:
+  mongodb:
+    image: mongo:4.2
+    environment:
+      - MONGO_INITDB_DATABASE=alerts_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./docker/mongo:/docker-entrypoint-initdb.d
+      - ./data/db:/data/db
+    networks:
+      - alerts_network
+
+  service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+    networks:
+      - alerts_network
+
+networks:
+  alerts_network:
