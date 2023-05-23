@@ -1,22 +1,29 @@
-# Base image
-FROM golang:latest
+# Tmp base image
+FROM golang:alpine AS build
 
-# workspace container
-WORKDIR /go/src/app
+# container workspace
+WORKDIR /app
 
 # Download Go modules
-COPY . .
-
-# Download project's dependecies
+COPY go.mod go.sum ./
 RUN go mod download
 
+# Copy source code and compile app
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
 
+### Base image###
+FROM alpine:latest
 
-# Compila la aplicación Go
-RUN go build -o main .
+# container workspace
+WORKDIR /app
 
-# Expone el puerto en el que se ejecutará la aplicación
+# Copy binary files from compilation stage
+COPY config.yaml .
+COPY --from=build /app/app .
+
+# Expose app port
 EXPOSE 3000
 
-# Define el comando para ejecutar la aplicación
-CMD ["./main"]
+# Execute app 
+CMD ["./app"]
